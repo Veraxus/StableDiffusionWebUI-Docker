@@ -1,0 +1,24 @@
+services:
+  stable-diffusion-webui:
+    build: .
+    container_name: stable-diffusion
+    image: stable-diffusion-webui-gpu
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./extensions:/app/stable-diffusion-webui/extensions
+      - ./models:/app/stable-diffusion-webui/models
+      - ./outputs:/app/stable-diffusion-webui/outputs
+      # Keep a venv cache as a docker volume
+      - venv:/app/stable-diffusion-webui/venv
+      - repositories:/app/stable-diffusion-webui/repositories
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    runtime: nvidia
+    restart: unless-stopped
+
+# Persist venv in it's own volume
+volumes:
+  venv:
+  repositories:
