@@ -29,11 +29,18 @@ USER webui-user
 RUN git config --global http.postBuffer 1048576000 && \
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)"
 
+WORKDIR /app/stable-diffusion-webui
+
 # Set webui venv & create repositories directory so we can make a volume with correct perms
-RUN cd /app/stable-diffusion-webui && \
-    python3.10 -m venv venv && \
+RUN python3.10 -m venv venv && \
     mkdir repositories && \
     mkdir outputs
+
+# Overwrite the local branch with Forge without merging
+RUN git config --global http.postBuffer 1048576000 && \
+    git remote add forge https://github.com/lllyasviel/stable-diffusion-webui-forge && \
+    git fetch forge && \
+    git checkout -B lllyasviel/main forge/main
 
 EXPOSE 7860
 

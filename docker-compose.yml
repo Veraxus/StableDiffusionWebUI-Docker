@@ -1,8 +1,8 @@
 services:
-  stable-diffusion-webui:
+  stable-diffusion-forge:
     build: .
-    container_name: stable-diffusion
-    image: stable-diffusion-webui-gpu
+    container_name: stable-diffusion-forge
+    image: stable-diffusion-forge-gpu
     ports:
       - "7860:7860"
     volumes:
