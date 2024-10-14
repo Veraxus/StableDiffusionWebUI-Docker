@@ -1,6 +1,14 @@
-FROM nvidia/cuda:12.6.1-cudnn-devel-ubuntu24.04
+# Dockerfile for Stable Diffusion Web UI Forge
+# https://github.com/lllyasviel/stable-diffusion-webui-forge
 
-WORKDIR /app
+# Choose CUDA image version
+#ARG TAG=12.1.1-cudnn8-devel-ubuntu22.04
+ARG TAG=12.6.1-cudnn-devel-ubuntu24.04
+
+FROM nvidia/cuda:${TAG}
+
+# Set work directory
+WORKDIR /stable-diffusion
 
 # Install prereqs and run automatic install script
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,25 +30,18 @@ RUN add-apt-repository ppa:deadsnakes/ppa -y && \
     wget https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && rm get-pip.py
 
 # Create a non-root user and switch to that user (webui doesn't allow root)
-RUN useradd -m -s /bin/bash webui-user && chown -R webui-user:webui-user /app
+RUN useradd -m -s /bin/bash webui-user && chown -R webui-user:webui-user /stable-diffusion
 USER webui-user
 
-# Download & install WebUI
+# Get forge
 RUN git config --global http.postBuffer 1048576000 && \
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)"
-
-WORKDIR /app/stable-diffusion-webui
-
-# Set webui venv & create repositories directory so we can make a volume with correct perms
-RUN python3.10 -m venv venv && \
+    git clone https://github.com/lllyasviel/stable-diffusion-webui-forge . && \
+    python3.10 -m venv venv && \
     mkdir repositories && \
     mkdir outputs
 
-# Overwrite the local branch with Forge without merging
-RUN git config --global http.postBuffer 1048576000 && \
-    git remote add forge https://github.com/lllyasviel/stable-diffusion-webui-forge && \
-    git fetch forge && \
-    git checkout -B lllyasviel/main forge/main
+# Install it in a separate layer (saves redownloading as we tweak)
+RUN ./webui.sh
 
 EXPOSE 7860
 
@@ -48,4 +49,5 @@ EXPOSE 7860
 #ENTRYPOINT []
 
 # Start SDWUI
-CMD ["/app/stable-diffusion-webui/webui.sh", "--xformers", "--enable-insecure-extension-access", "--listen", "--port", "7860"]
+#CMD ["/app/stable-diffusion-webui/webui.sh", "--reinstall-torch", "--reinstall-xformers", "--xformers", "--enable-insecure-extension-access", "--listen", "--port", "7860"]
+CMD ["./webui.sh", "--listen", "--enable-insecure-extension-access", "--port", "7860"]
